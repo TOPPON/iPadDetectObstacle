@@ -9,6 +9,8 @@
 #include <eigen3/Eigen/SVD>
 #include <eigen3/Eigen/Dense>
 
+#include "RansacPlane.h"
+
 #define FIRST_CALC_GRAVITY_SCANS 5
 #define ONE_SCAN_POINT_NUMBER 49152
 using namespace std;
@@ -97,20 +99,20 @@ int main()
 		{
 			istringstream i_strbuf(strbuf);
 			int count = 0;
-			MatrixXd temp(3,1);
+			MatrixXd temp(3, 1);
 			while (getline(i_strbuf, strconmabuf, ','))
 			{
 				count++;
 				switch (count)
 				{
 				case 1://タイムスタンプ
-					temp(0,0) = atof(strconmabuf.c_str());
+					temp(0, 0) = atof(strconmabuf.c_str());
 					break;
 				case 2:
-					temp(1,0) = atof(strconmabuf.c_str());
+					temp(1, 0) = atof(strconmabuf.c_str());
 					break;
 				case 3:
-					temp(2,0) = atof(strconmabuf.c_str());
+					temp(2, 0) = atof(strconmabuf.c_str());
 					break;
 				}
 			}
@@ -118,11 +120,12 @@ int main()
 		}
 		inputFile.close();
 		alliPadCoordinatePoint.push_back(oneScaniPadCoordinatePoint);
-		printf("%d個目終了",i);
+		printf("%d個目終了", i);
 	}
 	printf("点群データ読み込み完了\n");
-
+	//scanCount = 1;
 	printf("点群データ回転・出力開始");
+	vector<vector<MatrixXd>> allRotatediPadCoordinatePoint;//回転後の点群
 	for (int i = 0; i < scanCount; i++)
 	{
 		//スキャンごとの回転行列を計算
@@ -147,17 +150,37 @@ int main()
 
 
 		vector<MatrixXd> oneScanPeopleCoordinatePoint;//1スキャンの人座標のポイント数
-		ofstream outputFile("OutputData\\test"+std::to_string(i)+".csv",ios::out);
+		ofstream outputFile("OutputData\\test" + std::to_string(i) + ".csv", ios::out);
 		for (int j = 0; j < ONE_SCAN_POINT_NUMBER; j++)
 		{
 			oneScanPeopleCoordinatePoint.push_back(rollX * rollY*rollZ*alliPadCoordinatePoint[i][j]);
-			outputFile << oneScanPeopleCoordinatePoint[j](0, 0) << ","<< oneScanPeopleCoordinatePoint[j](1, 0) << ","<< oneScanPeopleCoordinatePoint[j](2, 0) << "," << endl;
+			outputFile << oneScanPeopleCoordinatePoint[j](0, 0) << "," << oneScanPeopleCoordinatePoint[j](1, 0) << "," << oneScanPeopleCoordinatePoint[j](2, 0) << "," << endl;
 		}
 		outputFile.close();
-		printf("Output:%d\n",i);
+		printf("Output:%d\n", i);
+		allRotatediPadCoordinatePoint.push_back(oneScanPeopleCoordinatePoint);
 	}
 	printf("点群データ回転・出力終了");
-	//
+
+	printf("平面推定開始");
+	for (int i = 0; i < scanCount; i++)
+	{
+		cout << "-----------------" << i << "点目" << "---------------------"<<endl;
+		vector<MatrixXd> lastPoint(allRotatediPadCoordinatePoint[i].size());//点をそのままコピー
+		copy(allRotatediPadCoordinatePoint[i].begin(), allRotatediPadCoordinatePoint[i].end(), lastPoint.begin());
+		RansacPlane rp;
+		for (int j = 0; j < 5; j++)
+		{
+			if (lastPoint.size() > 2)
+			{
+				MatrixXd plane = rp.GuessPlane(lastPoint, true, 0.01, 500,i);
+				cout << j << ":" << endl << plane << endl;
+				cout << "lastpointSize:" << lastPoint.size()<<endl;
+			}
+		}
+	}
+	printf("平面推定終了");
+
 }
 
 // プログラムの実行: Ctrl + F5 または [デバッグ] > [デバッグなしで開始] メニュー

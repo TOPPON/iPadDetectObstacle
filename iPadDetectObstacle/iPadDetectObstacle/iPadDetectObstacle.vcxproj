@@ -154,6 +154,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="iPadDetectObstacle.cpp" />
+    <ClCompile Include="RansacPlane.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RansacPlane.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
