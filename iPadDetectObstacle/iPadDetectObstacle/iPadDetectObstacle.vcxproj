@@ -153,10 +153,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DetectHeight.cpp" />
     <ClCompile Include="iPadDetectObstacle.cpp" />
     <ClCompile Include="RansacPlane.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DetectHeight.h" />
     <ClInclude Include="RansacPlane.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

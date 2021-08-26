@@ -18,7 +18,7 @@ public:
 	int scanCount:(デバッグ用)現在のスキャン数
 
 	Output
-	MatrixXd(3,1) returnValue:点数の一番多い平面の式(aX+bY+cZ=1)
+	MatrixXd(4,1) returnValue:点数の一番多い平面の式(aX+bY+cZ+d=0)
 	*/
 private:
 	int CalcPlaneScore(vector<MatrixXd> points, MatrixXd planeCoefficient,double threshold);

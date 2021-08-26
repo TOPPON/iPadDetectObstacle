@@ -94,7 +94,7 @@ void RansacPlane::DeletePlanePoint(vector<MatrixXd>& points, MatrixXd planeCoeff
 
 	//チェック用に出力
 	cout << "points.size():" << points.size() << endl;
-	ofstream outputFile("Plane" +std::to_string(scanCount)+"_"+ std::to_string(points.size()) + ".csv", ios::out);
+	ofstream outputFile("OutputData\\EstimatedPlane\\Plane" +std::to_string(scanCount)+"_"+ std::to_string(points.size()) + ".csv", ios::out);
 	for (int i = 0; i < points.size(); i++)
 	{
 		double distance = abs(a*points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a*a + b * b + c * c);
