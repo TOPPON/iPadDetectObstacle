@@ -29,7 +29,7 @@ public:
 		int centerX : 中心(0,0)となる点のX方向のindex
 		int centerY : 中心(0,0)となる点のY方向のindex
 	*/
-	HeightData MappingGridHeight(vector<MatrixXd> &oneScanPoint, MatrixXd plane, double gridSize);
+	HeightData MappingGridHeight(vector<MatrixXd> &oneScanPoint, MatrixXd plane, double gridSize, int firstScanNum);
 	/*
 	MappingGridHeight
 		点のPlaneからの高さをグリッドマップにマッピングして計算する
@@ -42,6 +42,6 @@ public:
 		HeightData returnValue : それぞれのグリッドマップの一番高い点を格納したデータ
 	*/
 private:
-	void RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane);//点群を路面とぴったり合うように回転し、路面の高さを0になるよう変換する
+	void RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane,int firstScanNum);//点群を路面とぴったり合うように回転し、路面の高さを0になるよう変換する
 	HeightData MappingHeight(vector<MatrixXd> &flatGroundScanPoint,double gridSize);
 };

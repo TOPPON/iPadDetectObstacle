@@ -15,8 +15,8 @@
 #define FIRST_CALC_GRAVITY_SCANS 10
 #define ONE_SCAN_POINT_NUMBER 49152
 #define PLANE_THRESHOLD 0.05
-#define FIRST_DATA_NUM 0//スキャン数を指定して処理をする際の最初のスキャン数
-#define LAST_DATA_NUM 500//スキャン数を指定して処理をする際の最後のスキャン数(含む)
+#define FIRST_DATA_NUM 1//スキャン数を指定して処理をする際の最初のスキャン数
+#define LAST_DATA_NUM 5//スキャン数を指定して処理をする際の最後のスキャン数(含まない)
 
 using namespace std;
 using namespace Eigen;
@@ -101,6 +101,8 @@ int main()
 		cout << "エラー:コード内FIRSTが大きすぎます。";
 		return 0;
 	}
+	firstScanNum = FIRST_DATA_NUM;
+	lastScanNum = LAST_DATA_NUM;
 	if (LAST_DATA_NUM > scanCount)
 	{
 		lastScanNum = scanCount;
@@ -114,9 +116,9 @@ int main()
 	//scanCountの数分点群データを読み込み
 	printf("点群データ読み込み開始\n");
 	vector<vector<MatrixXd>> alliPadCoordinatePoint;
-	for (int i = 0; i < scanCount; i++)//スキャン数分csvデータがあるはずなので、読み込む
+	for (int i = 0; i < thisProcessScanCount; i++)//スキャン数分csvデータがあるはずなので、読み込む
 	{
-		ifstream inputFile("InputData\\invpKscale" + to_string(i) + ".csv", std::ios::in);
+		ifstream inputFile("InputData\\invpKscale" + to_string(i+firstScanNum) + ".csv", std::ios::in);
 		vector<MatrixXd> oneScaniPadCoordinatePoint;//1スキャンのiPad座標の点群
 		while (getline(inputFile, strbuf))
 		{
@@ -149,57 +151,57 @@ int main()
 
 	printf("点群データ回転・出力開始");
 	vector<vector<MatrixXd>> allRotatediPadCoordinatePoint;//回転後の点群
-	for (int i = 0; i < scanCount; i++)
+	for (int i = 0; i < thisProcessScanCount; i++)
 	{
 		//スキャンごとの回転行列を計算
 		MatrixXd rollZ(3, 3);
 		MatrixXd rollY(3, 3);
 		MatrixXd rollX(3, 3);
 		rollZ <<
-			cos(iPadPostures[i].yaw), sin(iPadPostures[i].yaw), 0,
-			-sin(iPadPostures[i].yaw), cos(iPadPostures[i].yaw), 0,
+			cos(iPadPostures[i+firstScanNum].yaw), sin(iPadPostures[i + firstScanNum].yaw), 0,
+			-sin(iPadPostures[i + firstScanNum].yaw), cos(iPadPostures[i + firstScanNum].yaw), 0,
 			0, 0, 1;
 		rollY <<
-			-cos(iPadPostures[i].pitch), 0, sin(iPadPostures[i].pitch),
+			cos(iPadPostures[i+firstScanNum].pitch), 0, sin(iPadPostures[i+firstScanNum].pitch),
 			0, 1, 0,
-			-sin(iPadPostures[i].pitch), 0, -cos(iPadPostures[i].pitch);//怪しい
+			-sin(iPadPostures[i+firstScanNum].pitch), 0, cos(iPadPostures[i+firstScanNum].pitch);//怪しい
 		/*
 		rollY <<
-			cos(iPadPostures[i].pitch), 0, -sin(iPadPostures[i].pitch),
+			cos(iPadPostures[i+firstScanNum].pitch), 0, -sin(iPadPostures[i+firstScanNum].pitch),
 			0, 1, 0,
-			sin(iPadPostures[i].pitch), 0, cos(iPadPostures[i].pitch);*/
+			sin(iPadPostures[i+firstScanNum].pitch), 0, cos(iPadPostures[i+firstScanNum].pitch);*/
 		rollX <<
 			1, 0, 0,
-			0, cos(iPadPostures[i].roll), -sin(iPadPostures[i].roll),
-			0, sin(iPadPostures[i].roll), cos(iPadPostures[i].roll);
+			0, cos(iPadPostures[i+firstScanNum].roll), -sin(iPadPostures[i+firstScanNum].roll),
+			0, sin(iPadPostures[i+firstScanNum].roll), cos(iPadPostures[i+firstScanNum].roll);
 		/*
 		rollX <<
 			1, 0, 0,
-			0, cos(iPadPostures[i].roll), sin(iPadPostures[i].roll),
-			0, -sin(iPadPostures[i].roll), cos(iPadPostures[i].roll);*/
+			0, cos(iPadPostures[i+firstScanNum].roll), sin(iPadPostures[i+firstScanNum].roll),
+			0, -sin(iPadPostures[i+firstScanNum].roll), cos(iPadPostures[i+firstScanNum].roll);*/
 		cout << "ROLLX:" << rollX << endl;
 		cout << "ROLLY:" << rollY << endl;
 		cout << "ROLLZ:" << rollZ << endl;
 
 
 		vector<MatrixXd> oneScanPeopleCoordinatePoint;//1スキャンの人座標のポイント数
-		ofstream outputFile("OutputData\\NormalizedPoint\\test" + std::to_string(i) + ".csv", ios::out);
+		ofstream outputFile("OutputData\\NormalizedPoint\\test" + std::to_string(i+firstScanNum) + ".csv", ios::out);
 		for (int j = 0; j < ONE_SCAN_POINT_NUMBER; j++)
 		{
 			oneScanPeopleCoordinatePoint.push_back(rollX * rollY*rollZ*alliPadCoordinatePoint[i][j]);
 			outputFile << oneScanPeopleCoordinatePoint[j](0, 0) << "," << oneScanPeopleCoordinatePoint[j](1, 0) << "," << oneScanPeopleCoordinatePoint[j](2, 0) << "," << endl;
 		}
 		outputFile.close();
-		printf("Output:%d\n", i);
+		printf("Output:%d\n", i + firstScanNum);
 		allRotatediPadCoordinatePoint.push_back(oneScanPeopleCoordinatePoint);
 	}
 	printf("点群データ回転・出力終了");
 
 	printf("平面推定開始");
 	vector<vector<MatrixXd>> planes;
-	for (int i = 0; i < scanCount; i++)
+	for (int i = 0; i < thisProcessScanCount; i++)
 	{
-		cout << "-----------------" << i << "点目" << "---------------------" << endl;
+		cout << "-----------------" << i+firstScanNum << "点目" << "---------------------" << endl;
 		vector<MatrixXd> lastPoint(allRotatediPadCoordinatePoint[i].size());//点をそのままコピー
 		copy(allRotatediPadCoordinatePoint[i].begin(), allRotatediPadCoordinatePoint[i].end(), lastPoint.begin());
 		RansacPlane rp;
@@ -221,9 +223,9 @@ int main()
 	printf("路面検出開始");
 	MatrixXd gravity(1, 3);
 	gravity << 0, 0, 1;
-	for (int i = 0; i < scanCount; i++)
+	for (int i = 0; i < thisProcessScanCount; i++)
 	{
-		cout << "-----------------" << i << "点目" << "---------------------" << endl;
+		cout << "-----------------" << i+firstScanNum << "点目" << "---------------------" << endl;
 		for (int j = 0; j < planes[i].size(); j++)
 		{
 			MatrixXd Normal(3, 1);
@@ -250,16 +252,16 @@ int main()
 	printf("高さ検出開始");
 	DetectHeight dh;
 	dh.count = 0;
-	for (int i = 0; i < scanCount; i++)
+	for (int i = 0; i < thisProcessScanCount; i++)
 	{
-		cout << "-----------------" << i << "点目" << "---------------------" << endl;
+		cout << "-----------------" << i+firstScanNum << "点目" << "---------------------" << endl;
 		const double obstacleThreshold = 0.5;//50cm以上のものを
 		if (groundPlanes[i].rows() == 4)
 		{
 			double minDistance = 1000;
 			double obstacleHeight = 0;
-			DetectHeight::HeightData heightData = dh.MappingGridHeight(allRotatediPadCoordinatePoint[i], groundPlanes[i], 0.1);
-			ofstream outputFile("OutputData\\HeightMap\\Height" + std::to_string(i) + ".csv", ios::out);
+			DetectHeight::HeightData heightData = dh.MappingGridHeight(allRotatediPadCoordinatePoint[i], groundPlanes[i], 0.1,firstScanNum);
+			ofstream outputFile("OutputData\\HeightMap\\Height" + std::to_string(i+firstScanNum) + ".csv", ios::out);
 			for (int j = 0; j < heightData.mapSizeY; j++)
 			{
 				for (int k = 0; k < heightData.mapSizeX; k++)

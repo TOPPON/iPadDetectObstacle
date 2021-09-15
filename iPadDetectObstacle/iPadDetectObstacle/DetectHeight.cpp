@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 
-void DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane)
+void DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane,int firstScanNum)
 {
 
 	cout << "plane:" << endl << plane << endl;
@@ -28,7 +28,7 @@ void DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, Matri
 		groundHeight = (rotationGroundMatrix*aPlanePoint)(2, 0);
 	}
 	cout <<count<<"”Ô–Ú‚Ì"<< "groundHeight:  " << groundHeight << endl;
-	ofstream outputFile("OutputData\\GroundFlatPoint\\test" + std::to_string(count) + ".csv", ios::out);
+	ofstream outputFile("OutputData\\GroundFlatPoint\\test" + std::to_string(count+firstScanNum) + ".csv", ios::out);
 	for (int i = 0; i < flatGroundScanPoint.size(); i++)
 	{
 		MatrixXd beforePoint = flatGroundScanPoint[i];
@@ -51,11 +51,11 @@ dL‚ð(0 0 z=-d/c)•ÏŠ·‚É‚æ‚è‹‚ß
 ‚¿‚á‚ñ‚ÆŽ²‚ªZ>0‚É‚È‚Á‚Ä‚¢‚é‚±‚Æ‚ðŠm”F‚·‚é
 */
 }
-DetectHeight::HeightData DetectHeight::MappingGridHeight(vector<MatrixXd> &oneScanPoint, MatrixXd plane, double gridSize)
+DetectHeight::HeightData DetectHeight::MappingGridHeight(vector<MatrixXd> &oneScanPoint, MatrixXd plane, double gridSize,int firstScanNum)
 {
 	vector<MatrixXd> flatGroundPoint(oneScanPoint.size());
 	std::copy(oneScanPoint.begin(), oneScanPoint.end(), flatGroundPoint.begin());
-	RotateGroundFlat(flatGroundPoint, plane);
+	RotateGroundFlat(flatGroundPoint, plane,firstScanNum);
 	HeightData heightGridMap = MappingHeight(flatGroundPoint, gridSize);
 	return heightGridMap;
 }
