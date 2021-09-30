@@ -153,11 +153,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AppendixMethod.cpp" />
     <ClCompile Include="DetectHeight.cpp" />
     <ClCompile Include="iPadDetectObstacle.cpp" />
     <ClCompile Include="RansacPlane.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppendixMethod.h" />
     <ClInclude Include="DetectHeight.h" />
     <ClInclude Include="RansacPlane.h" />
   </ItemGroup>

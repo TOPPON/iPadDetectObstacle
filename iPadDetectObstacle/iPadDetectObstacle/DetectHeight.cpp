@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 
-void DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane,int firstScanNum)
+double DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane,int firstScanNum)
 {
 
 	cout << "plane:" << endl << plane << endl;
@@ -28,7 +28,7 @@ void DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, Matri
 		groundHeight = (rotationGroundMatrix*aPlanePoint)(2, 0);
 	}
 	cout <<count<<"”Ô–Ú‚Ì"<< "groundHeight:  " << groundHeight << endl;
-	ofstream outputFile("OutputData\\GroundFlatPoint\\test" + std::to_string(count+firstScanNum) + ".csv", ios::out);
+	ofstream outputFile("OutputData\\GroundFlatPoint\\GroundFlat" + std::to_string(count+firstScanNum) + ".csv", ios::out);
 	for (int i = 0; i < flatGroundScanPoint.size(); i++)
 	{
 		MatrixXd beforePoint = flatGroundScanPoint[i];
@@ -38,6 +38,7 @@ void DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, Matri
 	}
 	outputFile.close();
 	count++;
+	return groundHeight;
 
 	/*
 X=(c  a  a)
@@ -55,8 +56,9 @@ DetectHeight::HeightData DetectHeight::MappingGridHeight(vector<MatrixXd> &oneSc
 {
 	vector<MatrixXd> flatGroundPoint(oneScanPoint.size());
 	std::copy(oneScanPoint.begin(), oneScanPoint.end(), flatGroundPoint.begin());
-	RotateGroundFlat(flatGroundPoint, plane,firstScanNum);
+	double groundHeight=RotateGroundFlat(flatGroundPoint, plane,firstScanNum);
 	HeightData heightGridMap = MappingHeight(flatGroundPoint, gridSize);
+	heightGridMap.groundHeight = groundHeight;
 	return heightGridMap;
 }
 DetectHeight::HeightData DetectHeight::MappingHeight(vector<MatrixXd> &flatGroundScanPoint, double gridSize)
@@ -105,7 +107,7 @@ DetectHeight::HeightData DetectHeight::MappingHeight(vector<MatrixXd> &flatGroun
 			heightdata.gridHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
 		}
 	}
-	cout << "This.heightGridMap:" << heightdata.gridHeightMap << endl;
+	//cout << "This.heightGridMap:" << heightdata.gridHeightMap << endl;
 	return heightdata;
 }
 

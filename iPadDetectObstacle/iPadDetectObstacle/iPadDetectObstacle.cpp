@@ -11,12 +11,14 @@
 
 #include "RansacPlane.h"
 #include "DetectHeight.h"
+#include "AppendixMethod.h"
 
 #define FIRST_CALC_GRAVITY_SCANS 10
 #define ONE_SCAN_POINT_NUMBER 49152
 #define PLANE_THRESHOLD 0.05
-#define FIRST_DATA_NUM 1//スキャン数を指定して処理をする際の最初のスキャン数
-#define LAST_DATA_NUM 5//スキャン数を指定して処理をする際の最後のスキャン数(含まない)
+#define FIRST_DATA_NUM 22//スキャン数を指定して処理をする際の最初のスキャン数
+#define LAST_DATA_NUM 22//スキャン数を指定して処理をする際の最後のスキャン数(含まない)
+#define OBSTACLE_MIN_HEIGHT 0.5//障害物と認識する最低の高さ
 
 using namespace std;
 using namespace Eigen;
@@ -39,9 +41,6 @@ int main()
 {
 	printf("IMU情報読み込み開始");
 	ifstream inputFile("InputData\\timeAndIMU.csv", std::ios::in);
-	//string filename = "test.txt";
-	//ifstream inputFile(filename,std::ios::in);
-	//inputFile.open("test.txt", ios::in);
 	int scanCount = 0;//総スキャン数、姿勢角の行数をスキャン数とする
 	int firstScanNum = 0;//最初のスキャン数
 	int lastScanNum = 0;//最後のスキャンとなるスキャン数
@@ -96,7 +95,7 @@ int main()
 		iPadPostures.push_back(temp);
 	}
 	printf("IMU情報読み込み終わり,データ数%d\n", scanCount);
-	if (FIRST_DATA_NUM > scanCount||FIRST_DATA_NUM>LAST_DATA_NUM)
+	if (FIRST_DATA_NUM > scanCount || FIRST_DATA_NUM > LAST_DATA_NUM)
 	{
 		cout << "エラー:コード内FIRSTが大きすぎます。";
 		return 0;
@@ -105,20 +104,20 @@ int main()
 	lastScanNum = LAST_DATA_NUM;
 	if (LAST_DATA_NUM > scanCount)
 	{
-		lastScanNum = scanCount;
+		lastScanNum = scanCount-1;
 	}
 	if (FIRST_DATA_NUM < 0)
 	{
 		firstScanNum = 0;
 	}
-	int thisProcessScanCount = lastScanNum-firstScanNum+1;
+	int thisProcessScanCount = lastScanNum - firstScanNum + 1;
 
 	//scanCountの数分点群データを読み込み
 	printf("点群データ読み込み開始\n");
 	vector<vector<MatrixXd>> alliPadCoordinatePoint;
 	for (int i = 0; i < thisProcessScanCount; i++)//スキャン数分csvデータがあるはずなので、読み込む
 	{
-		ifstream inputFile("InputData\\invpKscale" + to_string(i+firstScanNum) + ".csv", std::ios::in);
+		ifstream inputFile("InputData\\invpKscale" + to_string(i + firstScanNum) + ".csv", std::ios::in);
 		vector<MatrixXd> oneScaniPadCoordinatePoint;//1スキャンのiPad座標の点群
 		while (getline(inputFile, strbuf))
 		{
@@ -136,8 +135,8 @@ int main()
 				case 2:
 					temp(1, 0) = atof(strconmabuf.c_str());
 					break;
-				case 3:
-					temp(2, 0) = atof(strconmabuf.c_str());
+				case 3://Z座標だけ反転して読み込むことで下向きになる(高さがマイナスにならないように)
+					temp(2, 0) = -atof(strconmabuf.c_str());
 					break;
 				}
 			}
@@ -157,38 +156,31 @@ int main()
 		MatrixXd rollZ(3, 3);
 		MatrixXd rollY(3, 3);
 		MatrixXd rollX(3, 3);
+		//いけたやつ　ZYXの順番
 		rollZ <<
-			cos(iPadPostures[i+firstScanNum].yaw), sin(iPadPostures[i + firstScanNum].yaw), 0,
-			-sin(iPadPostures[i + firstScanNum].yaw), cos(iPadPostures[i + firstScanNum].yaw), 0,
+			cos(iPadPostures[i + firstScanNum].yaw), -sin(iPadPostures[i + firstScanNum].yaw), 0,//正方向回転
+			sin(iPadPostures[i + firstScanNum].yaw), cos(iPadPostures[i + firstScanNum].yaw), 0,
 			0, 0, 1;
 		rollY <<
-			cos(iPadPostures[i+firstScanNum].pitch), 0, sin(iPadPostures[i+firstScanNum].pitch),
+			cos(iPadPostures[i + firstScanNum].pitch), 0, sin(iPadPostures[i + firstScanNum].pitch),
 			0, 1, 0,
-			-sin(iPadPostures[i+firstScanNum].pitch), 0, cos(iPadPostures[i+firstScanNum].pitch);//怪しい
-		/*
-		rollY <<
-			cos(iPadPostures[i+firstScanNum].pitch), 0, -sin(iPadPostures[i+firstScanNum].pitch),
-			0, 1, 0,
-			sin(iPadPostures[i+firstScanNum].pitch), 0, cos(iPadPostures[i+firstScanNum].pitch);*/
+			-sin(iPadPostures[i + firstScanNum].pitch), 0, cos(iPadPostures[i + firstScanNum].pitch);//正方向回転
+
 		rollX <<
 			1, 0, 0,
-			0, cos(iPadPostures[i+firstScanNum].roll), -sin(iPadPostures[i+firstScanNum].roll),
-			0, sin(iPadPostures[i+firstScanNum].roll), cos(iPadPostures[i+firstScanNum].roll);
-		/*
-		rollX <<
-			1, 0, 0,
-			0, cos(iPadPostures[i+firstScanNum].roll), sin(iPadPostures[i+firstScanNum].roll),
-			0, -sin(iPadPostures[i+firstScanNum].roll), cos(iPadPostures[i+firstScanNum].roll);*/
+			0, cos(iPadPostures[i + firstScanNum].roll), -sin(iPadPostures[i + firstScanNum].roll),
+			0, sin(iPadPostures[i + firstScanNum].roll), cos(iPadPostures[i + firstScanNum].roll);//正方向回転
+			
 		cout << "ROLLX:" << rollX << endl;
 		cout << "ROLLY:" << rollY << endl;
 		cout << "ROLLZ:" << rollZ << endl;
 
 
 		vector<MatrixXd> oneScanPeopleCoordinatePoint;//1スキャンの人座標のポイント数
-		ofstream outputFile("OutputData\\NormalizedPoint\\test" + std::to_string(i+firstScanNum) + ".csv", ios::out);
+		ofstream outputFile("OutputData\\NormalizedPoint\\Normalize" + std::to_string(i + firstScanNum) + ".csv", ios::out);
 		for (int j = 0; j < ONE_SCAN_POINT_NUMBER; j++)
 		{
-			oneScanPeopleCoordinatePoint.push_back(rollX * rollY*rollZ*alliPadCoordinatePoint[i][j]);
+			oneScanPeopleCoordinatePoint.push_back(rollZ*rollY * rollX*alliPadCoordinatePoint[i][j]);
 			outputFile << oneScanPeopleCoordinatePoint[j](0, 0) << "," << oneScanPeopleCoordinatePoint[j](1, 0) << "," << oneScanPeopleCoordinatePoint[j](2, 0) << "," << endl;
 		}
 		outputFile.close();
@@ -201,7 +193,7 @@ int main()
 	vector<vector<MatrixXd>> planes;
 	for (int i = 0; i < thisProcessScanCount; i++)
 	{
-		cout << "-----------------" << i+firstScanNum << "点目" << "---------------------" << endl;
+		cout << "-----------------" << i + firstScanNum << "点目" << "---------------------" << endl;
 		vector<MatrixXd> lastPoint(allRotatediPadCoordinatePoint[i].size());//点をそのままコピー
 		copy(allRotatediPadCoordinatePoint[i].begin(), allRotatediPadCoordinatePoint[i].end(), lastPoint.begin());
 		RansacPlane rp;
@@ -225,7 +217,7 @@ int main()
 	gravity << 0, 0, 1;
 	for (int i = 0; i < thisProcessScanCount; i++)
 	{
-		cout << "-----------------" << i+firstScanNum << "点目" << "---------------------" << endl;
+		cout << "-----------------" << i + firstScanNum << "点目" << "---------------------" << endl;
 		for (int j = 0; j < planes[i].size(); j++)
 		{
 			MatrixXd Normal(3, 1);
@@ -254,38 +246,50 @@ int main()
 	dh.count = 0;
 	for (int i = 0; i < thisProcessScanCount; i++)
 	{
-		cout << "-----------------" << i+firstScanNum << "点目" << "---------------------" << endl;
-		const double obstacleThreshold = 0.5;//50cm以上のものを
+		cout << "-----------------" << i + firstScanNum << "点目" << "---------------------" << endl;
+		//const double obstacleThreshold = 0.5;//50cm以上のものを障害物と認識
 		if (groundPlanes[i].rows() == 4)
 		{
 			double minDistance = 1000;
 			double obstacleHeight = 0;
-			DetectHeight::HeightData heightData = dh.MappingGridHeight(allRotatediPadCoordinatePoint[i], groundPlanes[i], 0.1,firstScanNum);
-			ofstream outputFile("OutputData\\HeightMap\\Height" + std::to_string(i+firstScanNum) + ".csv", ios::out);
+			DetectHeight::HeightData heightData = dh.MappingGridHeight(allRotatediPadCoordinatePoint[i], groundPlanes[i], 0.1, firstScanNum);
+			ofstream outputFile("OutputData\\HeightMap\\Height" + std::to_string(i + firstScanNum) + ".csv", ios::out);
 			for (int j = 0; j < heightData.mapSizeY; j++)
 			{
 				for (int k = 0; k < heightData.mapSizeX; k++)
 				{
 					outputFile << heightData.gridHeightMap(j, k) << ",";
-					if (heightData.gridHeightMap(j, k) > obstacleThreshold)
+					if (heightData.gridHeightMap(j, k) > OBSTACLE_MIN_HEIGHT)
 					{
-						if (minDistance > sqrt(heightData.gridHeightMap(j, k)*heightData.gridHeightMap(j, k) + (k + 1 - heightData.centerX)*heightData.gridSize*(k + 1 - heightData.centerX)*heightData.gridSize + (j + 1 - heightData.centerY)*heightData.gridSize*(j + 1 - heightData.centerY)*heightData.gridSize))
+						double thisDistance = sqrt((heightData.gridHeightMap(j, k) + heightData.groundHeight)*(heightData.gridHeightMap(j, k) + heightData.groundHeight)
+							+ (k + 1 - heightData.centerX)*heightData.gridSize*(k + 1 - heightData.centerX)*heightData.gridSize +
+							(j + 1 - heightData.centerY)*heightData.gridSize*(j + 1 - heightData.centerY)*heightData.gridSize);
+						if (minDistance > thisDistance)
 						{
-							minDistance = sqrt(heightData.gridHeightMap(j, k)*heightData.gridHeightMap(j, k) + (k + 1 - heightData.centerX)*heightData.gridSize*(k + 1 - heightData.centerX)*heightData.gridSize + (j + 1 - heightData.centerY)*heightData.gridSize*(j + 1 - heightData.centerY)*heightData.gridSize);
+							minDistance = thisDistance;
 							obstacleHeight = heightData.gridHeightMap(j, k);
 						}
 					}
 				}
 				outputFile << endl;
 			}
-			printf("%fmの距離に%f\ncmの高さの障害物あり", minDistance, obstacleHeight * 100);
-			outputFile << "centerx:," << heightData.centerX << "," << "centery:," << heightData.centerY << "\n";
-			outputFile << "障害物の距離:," << minDistance << "," << "高さ:," << obstacleHeight << ",";
+			outputFile << "centerx:," << heightData.centerX << "," << "centery:," << heightData.centerY << "groundHeight"<<heightData.groundHeight<<"\n";
+			//原点(iPad)の座標や障害物の高さを検出
+			if (obstacleHeight > OBSTACLE_MIN_HEIGHT)
+			{
+				printf("%fmの距離に%fcmの高さの障害物あり", minDistance, obstacleHeight * 100);
+				outputFile << "障害物の距離:," << minDistance << "," << "高さ:," << obstacleHeight << ",";
+			}
 			outputFile.close();
 		}
 		else
 		{
 			cout << "以前のエラーのためスキップします" << endl;
+			double mostNearPointDistance = AppendixMethod::CalcMostNearPointDistance(alliPadCoordinatePoint[i]);
+			cout << "一番近い物体は" << mostNearPointDistance << "mのところにあります" << endl;
+			ofstream outputFile("OutputData\\HeightMap\\Height" + std::to_string(i + firstScanNum) + ".csv", ios::out);
+			outputFile <<"点群の高さ計算失敗！"<<endl<<"一番近い点までの距離:," << mostNearPointDistance << endl;
+
 			dh.count++;
 		}
 	}
