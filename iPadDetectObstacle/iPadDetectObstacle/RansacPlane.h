@@ -45,7 +45,7 @@ private:
 	int scanCount:(デバッグ用)現在のスキャン数
 	
 	Output
-	vector<MatrixXd>& points:
+	vector<MatrixXd>& points:削除後の点
 	*/
 
 };

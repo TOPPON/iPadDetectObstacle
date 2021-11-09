@@ -112,7 +112,7 @@ void RansacPlane::DeletePlanePoint(vector<MatrixXd>& points, MatrixXd planeCoeff
 	outputFile.close();
 	points.clear();
 	points.resize(lastPoints.size());
-	cout << "lastPoints.size():" << lastPoints.size() << endl;
+	//cout << "lastPoints.size():" << lastPoints.size() << endl;
 	std::copy(lastPoints.begin(), lastPoints.end(), points.begin());
-	cout << "points.size():" << points.size() << endl;
+	//cout << "points.size():" << points.size() << endl;
 }

@@ -15,7 +15,7 @@ double DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, Mat
 		plane(1, 0), plane(2, 0), plane(1, 0),
 		-plane(0, 0), -plane(1, 0), plane(2, 0);
 	rotationGroundMatrix = invRotationGroundMatrix.inverse();
-	cout << "rotationGroundMatrix:" << endl << rotationGroundMatrix << endl << "det:" << endl << rotationGroundMatrix.determinant() << endl;
+	//cout << "rotationGroundMatrix:" << endl << rotationGroundMatrix << endl << "det:" << endl << rotationGroundMatrix.determinant() << endl;
 	//rotationGroundMatrix.normalize();
 	rotationGroundMatrix /= pow(rotationGroundMatrix.determinant(),0.333);
 	//if (rotationGroundMatrix.determinant() < 0)rotationGroundMatrix *= -1;
@@ -27,7 +27,7 @@ double DetectHeight::RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, Mat
 		aPlanePoint(2, 0) = -plane(3, 0) / plane(2, 0);
 		groundHeight = (rotationGroundMatrix*aPlanePoint)(2, 0);
 	}
-	cout <<count<<"”Ô–Ú‚Ì"<< "groundHeight:  " << groundHeight << endl;
+	cout <<count+firstScanNum<<"”Ô–Ú‚Ì"<< "groundHeight:  " << groundHeight << endl;
 	ofstream outputFile("OutputData\\GroundFlatPoint\\GroundFlat" + std::to_string(count+firstScanNum) + ".csv", ios::out);
 	for (int i = 0; i < flatGroundScanPoint.size(); i++)
 	{
