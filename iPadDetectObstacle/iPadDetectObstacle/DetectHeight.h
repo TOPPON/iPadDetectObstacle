@@ -14,7 +14,9 @@ public:
 	struct HeightData
 	{
 		HeightData();
-		MatrixXd gridHeightMap;//-1ならセルはなし
+		//MatrixXd gridHeightMap;//-1ならセルはなし
+		MatrixXd gridMinHeightMap;//-1ならセルはなし
+		MatrixXd gridMaxHeightMap;//-1ならセルはなし
 		double gridSize;//gridの大きさ
 		int centerX;
 		int centerY;
@@ -31,7 +33,7 @@ public:
 		int centerY : 中心(0,0)となる点のY方向のindex
 		double groundHeight : 地面の高さ、単位メートル
 	*/
-	HeightData MappingGridHeight(vector<MatrixXd> &oneScanPoint, MatrixXd plane, double gridSize, int firstScanNum);
+	HeightData MappingGridHeight(vector<MatrixXd>& oneScanPoint, MatrixXd plane, double gridSize, int firstScanNum);
 	/*
 	MappingGridHeight
 		点のPlaneからの高さをグリッドマップにマッピングして計算する
@@ -44,6 +46,6 @@ public:
 		HeightData returnValue : それぞれのグリッドマップの一番高い点を格納したデータ
 	*/
 private:
-	double RotateGroundFlat(vector<MatrixXd> &flatGroundScanPoint, MatrixXd plane,int firstScanNum);//点群を路面とぴったり合うように回転し、路面の高さを0になるよう変換する、平面の高さを返す
-	HeightData MappingHeight(vector<MatrixXd> &flatGroundScanPoint,double gridSize);//回転された点群をHeightDataに格納する
+	double RotateGroundFlat(vector<MatrixXd>& flatGroundScanPoint, MatrixXd plane, int firstScanNum);//点群を路面とぴったり合うように回転し、路面の高さを0になるよう変換する、平面の高さを返す
+	HeightData MappingHeight(vector<MatrixXd>& flatGroundScanPoint, double gridSize);//回転された点群をHeightDataに格納する
 };

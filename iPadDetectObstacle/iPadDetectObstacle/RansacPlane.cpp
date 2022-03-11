@@ -2,7 +2,7 @@
 #include "fstream"
 #include <iostream>
 
-MatrixXd RansacPlane::GuessPlane(std::vector<MatrixXd> &points, bool exceptPoints, double threshold, int tryNum,int scanCount)
+MatrixXd RansacPlane::GuessPlane(std::vector<MatrixXd>& points, bool exceptPoints, double threshold, int tryNum, int scanCount)
 {
 	int maxScore = 0;
 	MatrixXd maxPlaneCoefficient;
@@ -33,12 +33,12 @@ MatrixXd RansacPlane::GuessPlane(std::vector<MatrixXd> &points, bool exceptPoint
 		}
 		//平面の係数を求める
 		double a, b, c, d;//ax+by+cz+d=0の係数
-		a = (points[plane3Point[1]](1, 0) - points[plane3Point[0]](1, 0))*(points[plane3Point[2]](2, 0) - points[plane3Point[0]](2, 0)) -
-			(points[plane3Point[2]](1, 0) - points[plane3Point[0]](1, 0))*(points[plane3Point[1]](2, 0) - points[plane3Point[0]](2, 0));
-		b = (points[plane3Point[1]](2, 0) - points[plane3Point[0]](2, 0))*(points[plane3Point[2]](0, 0) - points[plane3Point[0]](0, 0)) -
-			(points[plane3Point[2]](2, 0) - points[plane3Point[0]](2, 0))*(points[plane3Point[1]](0, 0) - points[plane3Point[0]](0, 0));
-		c = (points[plane3Point[1]](0, 0) - points[plane3Point[0]](0, 0))*(points[plane3Point[2]](1, 0) - points[plane3Point[0]](1, 0)) -
-			(points[plane3Point[2]](0, 0) - points[plane3Point[0]](0, 0))*(points[plane3Point[1]](1, 0) - points[plane3Point[0]](1, 0));
+		a = (points[plane3Point[1]](1, 0) - points[plane3Point[0]](1, 0)) * (points[plane3Point[2]](2, 0) - points[plane3Point[0]](2, 0)) -
+			(points[plane3Point[2]](1, 0) - points[plane3Point[0]](1, 0)) * (points[plane3Point[1]](2, 0) - points[plane3Point[0]](2, 0));
+		b = (points[plane3Point[1]](2, 0) - points[plane3Point[0]](2, 0)) * (points[plane3Point[2]](0, 0) - points[plane3Point[0]](0, 0)) -
+			(points[plane3Point[2]](2, 0) - points[plane3Point[0]](2, 0)) * (points[plane3Point[1]](0, 0) - points[plane3Point[0]](0, 0));
+		c = (points[plane3Point[1]](0, 0) - points[plane3Point[0]](0, 0)) * (points[plane3Point[2]](1, 0) - points[plane3Point[0]](1, 0)) -
+			(points[plane3Point[2]](0, 0) - points[plane3Point[0]](0, 0)) * (points[plane3Point[1]](1, 0) - points[plane3Point[0]](1, 0));
 		d = -a * points[plane3Point[0]](0, 0) - b * points[plane3Point[0]](1, 0) - c * points[plane3Point[0]](2, 0);
 
 
@@ -58,14 +58,22 @@ MatrixXd RansacPlane::GuessPlane(std::vector<MatrixXd> &points, bool exceptPoint
 	//チェック用に平面ファイルを出力
 	//ofstream outputFile("Plane" + std::to_string(points.size()) + "-" + std::to_string(maxScore) + ".csv", ios::out);
 	//
+	//最適化
+
+	MatrixXd optimizedCofficient;
+	if (true)
+	{
+		OptimizePlane(points, maxPlaneCoefficient, threshold, tryNum, optimizedCofficient);
+	}
 	if (exceptPoints)//検出された点を除く
 	{
-		DeletePlanePoint(points, maxPlaneCoefficient, threshold,scanCount);
+		DeletePlanePoint(points, maxPlaneCoefficient, threshold, scanCount);
 	}
 	else
 	{
 
 	}
+	return optimizedCofficient;
 	return maxPlaneCoefficient;
 }
 
@@ -78,13 +86,13 @@ int RansacPlane::CalcPlaneScore(vector<MatrixXd> points, MatrixXd planeCoefficie
 	double d = planeCoefficient(3, 0);
 	for (int i = 0; i < points.size(); i++)
 	{
-		double distance = abs(a*points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a*a + b * b + c * c);
+		double distance = abs(a * points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a * a + b * b + c * c);
 		if (distance < threshold)score++;
 	}
 	return score;
 }
 
-void RansacPlane::DeletePlanePoint(vector<MatrixXd>& points, MatrixXd planeCoefficient, double threshold,int scanCount)
+void RansacPlane::DeletePlanePoint(vector<MatrixXd>& points, MatrixXd planeCoefficient, double threshold, int scanCount)
 {
 	vector<MatrixXd> lastPoints;
 	double a = planeCoefficient(0, 0);
@@ -94,10 +102,10 @@ void RansacPlane::DeletePlanePoint(vector<MatrixXd>& points, MatrixXd planeCoeff
 
 	//チェック用に出力
 	cout << "points.size():" << points.size() << endl;
-	ofstream outputFile("OutputData\\EstimatedPlane\\Plane" +std::to_string(scanCount)+"_"+ std::to_string(points.size()) + ".csv", ios::out);
+	ofstream outputFile("OutputData\\EstimatedPlane\\Plane" + std::to_string(scanCount) + "_" + std::to_string(points.size()) + ".csv", ios::out);
 	for (int i = 0; i < points.size(); i++)
 	{
-		double distance = abs(a*points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a*a + b * b + c * c);
+		double distance = abs(a * points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a * a + b * b + c * c);
 		if (distance >= threshold)
 		{
 			lastPoints.push_back(points[i]);
@@ -115,4 +123,96 @@ void RansacPlane::DeletePlanePoint(vector<MatrixXd>& points, MatrixXd planeCoeff
 	//cout << "lastPoints.size():" << lastPoints.size() << endl;
 	std::copy(lastPoints.begin(), lastPoints.end(), points.begin());
 	//cout << "points.size():" << points.size() << endl;
+}
+void RansacPlane::OptimizePlane(vector<MatrixXd> points, MatrixXd oldPlaneCoefficient, double threshold, int tryNum, MatrixXd& newPlaneCoefficient)
+{
+	vector<MatrixXd> lastPoints;
+	double a = oldPlaneCoefficient(0, 0);
+	double b = oldPlaneCoefficient(1, 0);
+	double c = oldPlaneCoefficient(2, 0);
+	double d = oldPlaneCoefficient(3, 0);
+
+	//チェック用に出力
+	for (int i = 0; i < points.size(); i++)
+	{
+		double distance = abs(a * points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a * a + b * b + c * c);
+		if (distance <= threshold)
+		{
+			lastPoints.push_back(points[i]);
+			//cout << "外point" << endl;
+		}
+	}
+
+	points.clear();
+	points.resize(lastPoints.size());
+	//cout << "lastPoints.size():" << lastPoints.size() << endl;
+	std::copy(lastPoints.begin(), lastPoints.end(), points.begin());
+	//cout << "points.size():" << points.size() << endl;
+	double minScore = 10000000;//平均
+	//点を減らした状態で点数を評価していく
+	for (int i = 0; i < tryNum; i++)
+	{
+		vector<int> plane3Point;
+		//被りがないように三点を選ぶ
+		for (int i = 0; i < 3; i++)
+		{
+			while (1)
+			{
+				bool isCheckConflictPoint = false;
+				int tempPoint = rand() % points.size();
+				for (int j = 0; j < plane3Point.size(); j++)
+				{
+					if (tempPoint == plane3Point[j])
+					{
+						isCheckConflictPoint = true;
+						break;
+					}
+				}
+				if (isCheckConflictPoint == false)
+				{
+					plane3Point.push_back(tempPoint);
+					break;
+				}
+			}
+		}
+		//平面の係数を求める
+		double a, b, c, d;//ax+by+cz+d=0の係数
+		a = (points[plane3Point[1]](1, 0) - points[plane3Point[0]](1, 0)) * (points[plane3Point[2]](2, 0) - points[plane3Point[0]](2, 0)) -
+			(points[plane3Point[2]](1, 0) - points[plane3Point[0]](1, 0)) * (points[plane3Point[1]](2, 0) - points[plane3Point[0]](2, 0));
+		b = (points[plane3Point[1]](2, 0) - points[plane3Point[0]](2, 0)) * (points[plane3Point[2]](0, 0) - points[plane3Point[0]](0, 0)) -
+			(points[plane3Point[2]](2, 0) - points[plane3Point[0]](2, 0)) * (points[plane3Point[1]](0, 0) - points[plane3Point[0]](0, 0));
+		c = (points[plane3Point[1]](0, 0) - points[plane3Point[0]](0, 0)) * (points[plane3Point[2]](1, 0) - points[plane3Point[0]](1, 0)) -
+			(points[plane3Point[2]](0, 0) - points[plane3Point[0]](0, 0)) * (points[plane3Point[1]](1, 0) - points[plane3Point[0]](1, 0));
+		d = -a * points[plane3Point[0]](0, 0) - b * points[plane3Point[0]](1, 0) - c * points[plane3Point[0]](2, 0);
+
+
+		MatrixXd planeCoefficient(4, 1);
+		planeCoefficient << a, b, c, d;
+
+		//平面
+		double score = CalcDistanceScore(points, planeCoefficient);
+		//cout << "score:" << score << endl;
+		if (minScore > score)
+		{
+			//cout << "highscore!!!--------------------" << score << endl << endl;
+			minScore = score;
+			newPlaneCoefficient = planeCoefficient;
+		}
+	}
+}
+double RansacPlane::CalcDistanceScore(vector<MatrixXd> points, MatrixXd PlaneCoefficient)
+{
+	vector<MatrixXd> lastPoints;
+	double a = PlaneCoefficient(0, 0);
+	double b = PlaneCoefficient(1, 0);
+	double c = PlaneCoefficient(2, 0);
+	double d = PlaneCoefficient(3, 0);
+	int pointNum = 0;
+	double sumScore = 0;
+	for (int i = 0; i < points.size(); i++)
+	{
+		double distance = abs(a * points[i](0, 0) + b * points[i](1, 0) + c * points[i](2, 0) + d) / sqrt(a * a + b * b + c * c);
+		sumScore += distance * distance;
+	}
+	return sqrt(sumScore / points.size());
 }

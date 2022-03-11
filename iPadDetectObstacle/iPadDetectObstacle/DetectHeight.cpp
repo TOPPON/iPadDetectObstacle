@@ -92,19 +92,29 @@ DetectHeight::HeightData DetectHeight::MappingHeight(vector<MatrixXd> &flatGroun
 	heightdata.mapSizeX = (int)(maxX - 0.5) + heightdata.centerX + 1;
 	heightdata.mapSizeY = (int)(maxY - 0.5) + heightdata.centerY + 1;
 	//heightdata.gridHeightMap.resize(mapSizeX, mapSizeY);
-	heightdata.gridHeightMap = Eigen::MatrixXd::Constant(heightdata.mapSizeY, heightdata.mapSizeX, -1);
+	heightdata.gridMaxHeightMap = Eigen::MatrixXd::Constant(heightdata.mapSizeY, heightdata.mapSizeX, -1);
+	heightdata.gridMinHeightMap = Eigen::MatrixXd::Constant(heightdata.mapSizeY, heightdata.mapSizeX, 1);
 	heightdata.gridSize = gridSize;
 	for (int i = 0; i < flatGroundScanPoint.size(); i++)
 	{
 		int tempx = (flatGroundScanPoint[i](0, 0) / gridSize - 0.5) + heightdata.centerX;
 		int tempy = (flatGroundScanPoint[i](1, 0) / gridSize - 0.5) + heightdata.centerY;
-		if (heightdata.gridHeightMap(tempy, tempx) == -1)
+		if (heightdata.gridMaxHeightMap(tempy, tempx) == -1)
 		{
-			heightdata.gridHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
+			heightdata.gridMaxHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
+			heightdata.gridMinHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
 		}
-		else if (heightdata.gridHeightMap(tempy, tempx) < flatGroundScanPoint[i](2, 0))
+		if (heightdata.gridMaxHeightMap(tempy, tempx) == 1)
 		{
-			heightdata.gridHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
+			heightdata.gridMinHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
+		}
+		if (heightdata.gridMaxHeightMap(tempy, tempx) < flatGroundScanPoint[i](2, 0))
+		{
+			heightdata.gridMaxHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
+		}
+		if (heightdata.gridMinHeightMap(tempy, tempx) > flatGroundScanPoint[i](2, 0))
+		{
+			heightdata.gridMinHeightMap(tempy, tempx) = flatGroundScanPoint[i](2, 0);
 		}
 	}
 	//cout << "This.heightGridMap:" << heightdata.gridHeightMap << endl;
@@ -114,5 +124,6 @@ DetectHeight::HeightData DetectHeight::MappingHeight(vector<MatrixXd> &flatGroun
 DetectHeight::HeightData::HeightData()
 {
 	gridSize = 1;
-	gridHeightMap = MatrixXd::Zero(1, 1);
+	gridMaxHeightMap = MatrixXd::Zero(1, 1);
+	gridMinHeightMap = MatrixXd::Zero(1, 1);
 }
